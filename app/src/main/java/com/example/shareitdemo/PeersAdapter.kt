@@ -38,7 +38,7 @@ class PeersAdapter(var mContext: Context) : RecyclerView.Adapter<PeersAdapter.Vi
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 
         Log.e("wifidirectdemo", "onBind: ${listDevices[position].deviceName}")
-        holder.tvName.text = listDevices[position].deviceName
+        holder.tvName.text = listDevices[position].deviceName  +" ~~ "+ listDevices[position].deviceAddress
         holder.tvStatus.text =
             (mContext as MainActivity).getDeviceStatus(listDevices[position].status)
         holder.itemView.setOnClickListener {

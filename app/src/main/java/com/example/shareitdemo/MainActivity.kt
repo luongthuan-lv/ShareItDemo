@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 import java.net.InetAddress
 
+
 class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener {
     val TAG = "wifidirectdemo"
     private var manager: WifiP2pManager? = null
@@ -60,21 +61,32 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
 
         wifi.setOnClickListener {
             if (serverClass != null) {
-                Log.e(TAG, "start serverClass: IN:" + serverClass!!.sendReceive!!.inputStream.toString())
-                Log.e(TAG, "start serverClass: OUT" + serverClass!!.sendReceive!!.outputStream.toString())
+                Log.e(
+                    TAG,
+                    "start serverClass: serverSocket:" + serverClass!!.serverSocket.toString()
+                )
+                Log.e(TAG, "start serverClass: socket" + serverClass!!.socket.toString())
             } else {
                 Log.e(TAG, "serverClass null")
             }
 
             if (clientClass != null) {
-                Log.e(TAG, "start clientClass: IN:" + clientClass!!.sendReceive!!.inputStream.toString())
-                Log.e(TAG, "start clientClass: OUT" + clientClass!!.sendReceive!!.outputStream.toString())
+                Log.e(
+                    TAG,
+                    "start clientClass: clientSocket:" + clientClass!!.clientSocket.toString()
+                )
+                Log.e(TAG, "start clientClass: hostAdd" + clientClass!!.hostAdd.toString())
             } else {
                 Log.e(TAG, "clientClass null")
             }
         }
 
         discover.setOnClickListener {
+            Log.e(TAG, "1111: ${Utils.getMACAddress("wlan0")}")
+            Log.e(TAG, "2222: ${Utils.getMACAddress("eth0")}")
+            Log.e(TAG, "3333: ${Utils.getIPAddress(true)}")
+            Log.e(TAG, "4444: ${Utils.getIPAddress(false)}")
+
             progress.visibility = View.VISIBLE
 
             if (!isWifiP2pEnabled) {
@@ -101,6 +113,7 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
             val config = WifiP2pConfig()
             config.deviceAddress = deviceHost!!.deviceAddress
             config.wps.setup = WpsInfo.PBC
+            Log.e(TAG, "config: $config")
             manager!!.connect(channel, config, object : ActionListener {
                 override fun onSuccess() {
                     // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
@@ -131,27 +144,27 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
         btnGallery.setOnClickListener {
 
 
-            if (serverClass != null) {
-                if (serverClass?.sendReceive?.isRunning == false) {
-                    serverClass?.startServer(handler)
-                    Log.e(TAG, "start serverClass: " + serverClass!!.socket.toString())
-                } else {
-                    Log.e(TAG, "serverClass isRunning null")
-                }
-            } else {
-                Log.e(TAG, "serverClass null")
-            }
-
-            if (clientClass != null) {
-                if (clientClass?.sendReceive?.isRunning == false) {
-                    clientClass?.startClient(handler)
-                    Log.e(TAG, "start clientClass: " + clientClass!!.clientSocket.toString())
-                } else {
-                    Log.e(TAG, "clientClass isRunning null")
-                }
-            } else {
-                Log.e(TAG, "clientClass null")
-            }
+//            if (serverClass != null) {
+//                if (serverClass?.sendReceive?.isRunning == false) {
+//                    serverClass?.startServer(handler)
+//                    Log.e(TAG, "start serverClass: " + serverClass!!.socket.toString())
+//                } else {
+//                    Log.e(TAG, "serverClass isRunning null")
+//                }
+//            } else {
+//                Log.e(TAG, "serverClass null")
+//            }
+//
+//            if (clientClass != null) {
+//                if (clientClass?.sendReceive?.isRunning == false) {
+//                    clientClass?.startClient(handler)
+//                    Log.e(TAG, "start clientClass: " + clientClass!!.clientSocket.toString())
+//                } else {
+//                    Log.e(TAG, "clientClass isRunning null")
+//                }
+//            } else {
+//                Log.e(TAG, "clientClass null")
+//            }
 
 
             // Allow user to pick an image from Gallery or other
@@ -217,18 +230,26 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
         try {
             CoroutineScope(Dispatchers.IO).launch {
                 if (clientClass != null) {
-                    if (clientClass!!.sendReceive != null) {
-                        Log.e(
-                            "wifidirectdemo",
-                            "CHECK CLIENT: ${contentResolver.openInputStream(uri!!)!!} ~~~~~ ${clientClass!!.sendReceive!!.outputStream}   "
-                        )
-                        clientClass!!.sendReceive!!.copyFile(
-                            contentResolver.openInputStream(uri!!)!!,
-                            clientClass!!.sendReceive!!.outputStream
-                        )
+                    if (clientClass?.clientSocket == null) {
+                        Log.e(TAG, "KHỞI TẠO")
+                        clientClass?.startClient(uri!!)
                     } else {
-                        Log.e(TAG, "null client 2")
+                        clientClass?.startClientNew(uri!!)
+                        Log.e(TAG, "KHÔNG KHỞI TẠO")
                     }
+
+//                    if (clientClass!!.sendReceive != null) {
+//                        Log.e(
+//                            "wifidirectdemo",
+//                            "CHECK CLIENT: ${contentResolver.openInputStream(uri!!)!!} ~~~~~ ${clientClass!!.sendReceive!!.outputStream}   "
+//                        )
+//                        clientClass!!.sendReceive!!.copyFile(
+//                            contentResolver.openInputStream(uri!!)!!,
+//                            clientClass!!.sendReceive!!.outputStream
+//                        )
+//                    } else {
+//                        Log.e(TAG, "null client 2")
+//                    }
                 } else {
                     Log.e(TAG, "null client 1")
                 }
@@ -376,7 +397,7 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
 
     fun updateThisDevice(device: WifiP2pDevice) {
         this.device = device
-        my_name.text = device.deviceName
+        my_name.text = device.deviceName + " ~~ " + device.deviceAddress
         my_status.text = getDeviceStatus(device.status)
     }
 
@@ -430,7 +451,7 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener 
                 /*TODO CLIENT*/
                 Log.e(TAG, "TODO CLIENT")
                 clientClass = ClientClass(groupOwnerAddress, this@MainActivity)
-                clientClass?.startClient(handler)
+                // clientClass?.startClient(handler)
 
             }
 

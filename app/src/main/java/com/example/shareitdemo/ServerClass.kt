@@ -33,6 +33,8 @@ class ServerClass(var activity: MainActivity) {
                     Log.e("wifidirectdemo", sendReceive.toString())
                     sendReceive!!.runSendReceive(activity)
                     //sendReceive!!.runSendReceive()
+
+                  //  serverSocket!!.close()
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
@@ -41,8 +43,8 @@ class ServerClass(var activity: MainActivity) {
         }
     }
 
-    fun stopServer() {
-        socket?.close()
-        serverSocket?.close()
-    }
+//    fun stopServer() {
+//        socket?.close()
+//        serverSocket?.close()
+//    }
 }

@@ -102,10 +102,9 @@ class SendReceive(var socket: Socket, var handler: Handler) {
 
             Log.e("wifidirectdemo", "SEND FILE 22 ")
 
-
-            out.close()
+//            out.close()
 //            inputStream.close()
-            Log.e("wifidirectdemo", "close input and output + check")
+//            Log.e("wifidirectdemo", "close input and output + check")
 
 
         } catch (e: IOException) {
