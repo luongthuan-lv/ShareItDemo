@@ -28,6 +28,14 @@
                 android:text="WIFI" />
 
             <Button
+                android:id="@+id/stop"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:text="STOP" />
+
+            <Button
                 android:id="@+id/discover"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"

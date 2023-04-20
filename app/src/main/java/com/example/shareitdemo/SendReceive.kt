@@ -23,29 +23,29 @@ class SendReceive(var socket: Socket, var handler: Handler) {
         CoroutineScope(Dispatchers.IO).launch {
             while (socket != null) {
                 try {
-                    Log.e("wifidirectdemo", "RECEIVE TEXT")
+                    Log.e("wifidirectdemo1", "RECEIVE TEXT")
                     /*send text*/
                     val buffer = ByteArray(1024)
+
                     val bytes: Int = inputStream.read(buffer)
-                    Log.e("wifidirectdemo", "try")
+                    Log.e("wifidirectdemo1", "TRY")
                     if (bytes > 0) {
-                        Log.e("wifidirectdemo", "RECEIVE: $handler")
+                        Log.e("wifidirectdemo1", "RECEIVE: ${String(buffer, 0, bytes)}")
                         handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget()
                     }
 
-                } catch (e: IOException) {
-                    Log.e("wifidirectdemo", "catch")
+                } catch (e: Exception) {
+                    Log.e("wifidirectdemo1", "catch")
                     e.printStackTrace()
                 }
             }
         }
     }
 
-    fun runSendReceive(activity: MainActivity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            //while (socket != null) {
-            Log.e("wifidirectdemo", "RECEIVE FILE")
+    fun runSendReceiveNew(activity: MainActivity) {
+        try {
+            Log.e("wifidirectdemo1", "RECEIVE FILE")
             val f = File(
                 activity.getExternalFilesDir("received"),
                 "wifip2pshared-" + System.currentTimeMillis() + ".jpg"
@@ -54,64 +54,99 @@ class SendReceive(var socket: Socket, var handler: Handler) {
             val dirs = File(f.parent!!)
             if (!dirs.exists()) dirs.mkdirs()
             f.createNewFile()
-            Log.e("wifidirectdemo", "CHECK  COPY ")
-            copyFile(inputStream, FileOutputStream(f))
+            Log.e("wifidirectdemo1", "SEND FILE")
 
+            copyFile(inputStream, FileOutputStream(f))
             if (isRunning) {
-                Log.e("wifidirectdemo", "CHECK  OPEN ")
+                Log.e("wifidirectdemo1", "CHECK  OPEN ")
                 val fileUri = FileProvider.getUriForFile(
                     activity,
                     "com.example.android.shareit.fileprovider",
                     f
                 )
 
-                Log.e("wifidirectdemo", "uri: ~~~  $fileUri")
+                Log.e("wifidirectdemo1", "uri: ~~~  $fileUri")
 
                 val intent = Intent()
                 intent.action = Intent.ACTION_VIEW
                 intent.setDataAndType(fileUri, "image/*")
                 intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                 activity.startActivity(intent)
-
             }
 
 
-//                break
+        } catch (e: IOException) {
+            Log.e("wifidirectdemo1", "SEND FILE 33 ")
+            Log.d("wifidirectdemo1", e.toString())
+        }
+    }
+
+    fun runSendReceive(activity: MainActivity, isClient: Boolean = false) {
+        CoroutineScope(Dispatchers.IO).launch {
+
+            Log.e("wifidirectdemo1", "RECEIVE FILE")
+            val f = File(
+                activity.getExternalFilesDir("received"),
+                "wifip2pshared-" + System.currentTimeMillis() + ".jpg"
+            )
+
+            val dirs = File(f.parent!!)
+            if (!dirs.exists()) dirs.mkdirs()
+            f.createNewFile()
+            Log.e("wifidirectdemo1", "CHECK  COPY")
+
+
+            copyFile(inputStream, FileOutputStream(f))
+
+
+
+
+            if (isRunning) {
+                Log.e("wifidirectdemo1", "CHECK  OPEN ")
+                val fileUri = FileProvider.getUriForFile(
+                    activity,
+                    "com.example.android.shareit.fileprovider",
+                    f
+                )
+
+                Log.e("wifidirectdemo1", "uri: ~~~  $fileUri")
+
+                val intent = Intent()
+                intent.action = Intent.ACTION_VIEW
+                intent.setDataAndType(fileUri, "image/*")
+                intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                activity.startActivity(intent)
+            }
             //}
         }
     }
 
     fun write(bytes: ByteArray?) {
         try {
-            Log.e("wifidirectdemo", "SEND")
+            Log.e("wifidirectdemo1", "SEND")
             outputStream.write(bytes)
         } catch (e: IOException) {
             e.printStackTrace()
         }
+
     }
 
     fun copyFile(inputStream: InputStream, out: OutputStream): Boolean {
-
         val buf = ByteArray(1024)
         var len: Int
         try {
-            Log.e("wifidirectdemo", "SEND FILE 00 ")
+
             while (inputStream.read(buf).also { len = it } != -1) {
                 out.write(buf, 0, len)
             }
 
-            Log.e("wifidirectdemo", "SEND FILE 22 ")
-
-//            out.close()
-//            inputStream.close()
-//            Log.e("wifidirectdemo", "close input and output + check")
-
-
         } catch (e: IOException) {
             isRunning = false
-            Log.e("wifidirectdemo", "SEND FILE 33 ")
-            Log.d("wifidirectdemo", e.toString())
+            Log.e("wifidirectdemo1", "SENDRECEIVE")
+            Log.d("wifidirectdemo1", e.toString())
             return false
+        } finally {
+            outputStream.close()
         }
         return true
     }

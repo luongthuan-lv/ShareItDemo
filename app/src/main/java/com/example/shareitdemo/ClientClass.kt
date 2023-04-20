@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -26,21 +27,21 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.IO) {
                 try {
-
-                    if (clientSocket == null){
+                    while (true) {
+                        Log.e("wifidirectdemo1", "startClient")
                         clientSocket = Socket()
                         clientSocket?.bind(null)
-                        clientSocket?.connect(InetSocketAddress(hostAdd, 8888), 10000)
-                        Log.e("wifidirectdemo", "KHỞI TẠO")
-                    }else{
-                        Log.e("wifidirectdemo", "KHÔNG KHỞI TẠO")
+                        clientSocket?.connect(InetSocketAddress(hostAdd, 9999), 10000)
+
+
+
+                        sendReceive = SendReceive(clientSocket!!, handler)
+                        sendReceive!!.runSendReceiveNew(activity)
+                        //sendReceive!!.runSendReceive(activity)
+                        //sendReceive!!.runSendReceive()
+
                     }
 
-
-                    sendReceive = SendReceive(clientSocket!!, handler)
-                    Log.e("wifidirectdemo", sendReceive.toString())
-                    sendReceive!!.runSendReceive(activity)
-                    //sendReceive!!.runSendReceive()
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
@@ -49,36 +50,48 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
         }
     }
 
-    fun startClient(uri: Uri) {
+
+    fun startClient(uri: Uri, handler: Handler) {
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.IO) {
                 try {
-                    clientSocket = Socket()
-                    clientSocket?.bind(null)
-                    clientSocket?.connect(InetSocketAddress(hostAdd, 8888), 10000)
+                    // clientSocket = Socket(InetAddress.getByName(hostAdd), 8888)
+//                    clientSocket = Socket()
+//                    clientSocket?.bind(null)
+//                    clientSocket?.connect(InetSocketAddress(hostAdd, 8888), 10000)
+//
+                    val cr = activity.contentResolver
+                    var `is`: InputStream? = null
+                    try {
+                        `is` = cr.openInputStream(uri)
+                    } catch (e: FileNotFoundException) {
+                        Log.d("wifidirectdemo1", "ERROR")
+                        Log.d("wifidirectdemo1", e.toString())
+                    }
+
 
                     copyFile(
-                        activity.contentResolver.openInputStream(uri)!!,
+                        `is`!!,
                         clientSocket?.getOutputStream()!!
                     )
 
                     //clientSocket!!.close()
 
-//                    sendReceive = SendReceive(clientSocket!!, handler)
-//                    Log.e("wifidirectdemo", sendReceive.toString())
-//                    sendReceive!!.runSendReceive(activity)
-                    //sendReceive!!.runSendReceive()
+                    sendReceive = SendReceive(clientSocket!!, handler)
+                    //sendReceive!!.runSendReceive(activity)
+
                 } catch (e: IOException) {
-                    Log.e("wifidirectdemo", "CRASH 1 $e")
+                    Log.e("wifidirectdemo1", "CRASH 1 $e")
                     e.printStackTrace()
                 } finally {
                     if (clientSocket != null) {
                         if (clientSocket!!.isConnected()) {
                             try {
-                                clientSocket!!.close();
+                                Log.e("wifidirectdemo1", "CLOSE SOCKET")
+                                clientSocket!!.close()
                             } catch (e: IOException) {
                                 // Give up
-                                Log.e("wifidirectdemo", "CRASH 2")
+                                Log.e("wifidirectdemo1", "CRASH 2")
                                 e.printStackTrace();
                             }
                         }
@@ -89,41 +102,39 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
         }
     }
 
-    fun startClientNew(uri: Uri) {
+    fun writeImage(uri: Uri) {
         CoroutineScope(Dispatchers.Main).launch {
             withContext(Dispatchers.IO) {
-//                try {
-//                    clientSocket = Socket()
-//                    clientSocket?.bind(null)
-                    clientSocket?.connect(InetSocketAddress(hostAdd, 8888), 10000)
+                var outputStream: OutputStream? = null
+                try {
+                    outputStream = clientSocket?.getOutputStream()
+                    if (outputStream == null) {
+                        Log.e("wifidirectdemo1", "Output stream is null.")
+                        return@withContext
+                    }
 
                     copyFile(
                         activity.contentResolver.openInputStream(uri)!!,
-                        clientSocket?.getOutputStream()!!
+                        outputStream
                     )
-
-                    //clientSocket!!.close()
-
-//                    sendReceive = SendReceive(clientSocket!!, handler)
-//                    Log.e("wifidirectdemo", sendReceive.toString())
-//                    sendReceive!!.runSendReceive(activity)
-                    //sendReceive!!.runSendReceive()
-//                } catch (e: IOException) {
-//                    Log.e("wifidirectdemo", "CRASH 1 $e")
-//                    e.printStackTrace()
-//                } finally {
-//                    if (clientSocket != null) {
-//                        if (clientSocket!!.isConnected()) {
-//                            try {
-//                                clientSocket!!.close();
-//                            } catch (e: IOException) {
-//                                // Give up
-//                                Log.e("wifidirectdemo", "CRASH 2")
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    }
-//                }
+                } catch (e: IOException) {
+                    Log.e("wifidirectdemo1", "CRASH 1 $e")
+                    e.printStackTrace()
+                } finally {
+                    if (clientSocket != null) {
+                        if (clientSocket!!.isConnected()) {
+                            try {
+                                Log.e("wifidirectdemo1", "CLOSE SOCKET")
+                                outputStream?.flush()
+                                outputStream?.close()
+                            } catch (e: IOException) {
+                                // Give up
+                                Log.e("wifidirectdemo1", "CRASH 2")
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
             }
 
         }
@@ -134,22 +145,20 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
         val buf = ByteArray(1024)
         var len: Int
         try {
-            Log.e("wifidirectdemo", "SEND FILE 00 ")
+            Log.e("wifidirectdemo1", "SEND FILE 00 ")
             while (inputStream.read(buf).also { len = it } != -1) {
                 out.write(buf, 0, len)
             }
 
-            Log.e("wifidirectdemo", "SEND FILE 22 ")
-
-//            out.close()
-//            inputStream.close()
-//            Log.e("wifidirectdemo", "close input and output + check")
+            Log.e("wifidirectdemo1", "SEND FILE 22 ")
 
 
         } catch (e: IOException) {
-            Log.e("wifidirectdemo", "SEND FILE 33 ")
-            Log.d("wifidirectdemo", e.toString())
+            Log.e("wifidirectdemo1", "SEND FILE 33 ")
+            Log.d("wifidirectdemo1", e.toString())
             return false
+        } finally {
+            inputStream.close()
         }
         return true
     }
