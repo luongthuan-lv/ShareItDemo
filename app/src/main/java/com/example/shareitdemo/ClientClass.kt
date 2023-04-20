@@ -31,7 +31,7 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
                         Log.e("wifidirectdemo1", "startClient")
                         clientSocket = Socket()
                         clientSocket?.bind(null)
-                        clientSocket?.connect(InetSocketAddress(hostAdd, 9999), 10000)
+                        clientSocket?.connect(InetSocketAddress(hostAdd, 9090), 10000)
 
 
 

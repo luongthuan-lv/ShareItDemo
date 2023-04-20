@@ -6,16 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.net.NetworkInfo
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
-import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.*
 import android.net.wifi.p2p.WifiP2pManager.*
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -50,7 +47,7 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
     private var peersAdapter: PeersAdapter? = null
     private val CHOOSE_FILE_RESULT_CODE = 20
 
-    private var isStart = false
+    private var serverAddress: InetAddress? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -298,6 +295,16 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
             adapter = peersAdapter
         }
 
+        btnServer.setOnClickListener {
+            serverClass = ServerClass(this@MainActivity)
+//                serverClass!!.startServerText(handler)
+            serverClass!!.startServer(handler)
+        }
+
+        btnClient.setOnClickListener {
+            clientClass = ClientClass(serverAddress!!, this@MainActivity)
+            clientClass?.startClient(handler)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -334,11 +341,13 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         super.onResume()
         receiver = WiFiDirectBroadcastReceiver(manager!!, channel!!, this)
         registerReceiver(receiver, intentFilter)
+        registerWiFiReceiver()
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(receiver)
+        unregisterWiFiReceiver()
     }
 
 
@@ -529,14 +538,14 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         Log.e(TAG, "HOTSPOT: $ssid ~ $password")
     }
 
-    fun connectHotspot(){
+    fun connectHotspot() {
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         if (!wifiManager.isWifiEnabled) {
             wifiManager.isWifiEnabled = true
         }
         val wifiConfig = WifiConfiguration()
-        wifiConfig.SSID = "AndroidShare_1838"
-        wifiConfig.preSharedKey = "eaf0a69bc53f"
+        wifiConfig.SSID = "AndroidShare_4345"
+        wifiConfig.preSharedKey = "f43337e9d5da"
 
         val networkId = wifiManager.addNetwork(wifiConfig)
 
@@ -544,5 +553,54 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         wifiManager.enableNetwork(networkId, true)
         wifiManager.reconnect()
     }
+
+
+    private val wifiManager: WifiManager by lazy {
+        applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    }
+
+    private val wifiReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                WifiManager.NETWORK_STATE_CHANGED_ACTION -> {
+                    val networkInfo =
+                        intent.getParcelableExtra<NetworkInfo>(WifiManager.EXTRA_NETWORK_INFO)
+                    val wifiInfo = wifiManager.connectionInfo
+                    if (networkInfo != null && networkInfo.isConnected && wifiInfo != null) {
+                        // Connected to a WiFi network, do something here
+                        Log.d("WiFi Connection", "Connected to ${wifiInfo.ssid}")
+                        Toast.makeText(this@MainActivity, "Success", Toast.LENGTH_SHORT).show()
+                        val ipAddress = wifiManager.connectionInfo.ipAddress
+                        val ipAddressString = String.format(
+                            "%d.%d.%d.%d",
+                            ipAddress and 0xff,
+                            ipAddress shr 8 and 0xff,
+                            ipAddress shr 16 and 0xff,
+                            ipAddress shr 24 and 0xff
+                        )
+
+                         serverAddress = InetAddress.getByName(ipAddressString)
+                        Log.d("TAG", "Server address: ${serverAddress?.hostAddress}")
+                    } else {
+                        // Not connected to a WiFi network, do something here
+                        Log.d("WiFi Connection", "Not connected to a WiFi network")
+                        Toast.makeText(this@MainActivity, "Failure", Toast.LENGTH_SHORT).show()
+
+                    }
+                }
+            }
+        }
+    }
+
+    fun registerWiFiReceiver() {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+        registerReceiver(wifiReceiver, intentFilter)
+    }
+
+    fun unregisterWiFiReceiver() {
+        unregisterReceiver(wifiReceiver)
+    }
+
 
 }
