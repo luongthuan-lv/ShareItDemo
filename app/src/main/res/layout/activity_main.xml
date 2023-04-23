@@ -34,6 +34,22 @@
                 android:layout_margin="10dp"
                 android:paddingVertical="4dp"
                 android:text="CLIENT" />
+
+            <Button
+                android:id="@+id/btnConnectHotspot"
+                android:layout_width="60dp"
+                android:layout_height="50dp"
+                android:layout_margin="10dp"
+                android:paddingVertical="4dp"
+                android:text="Cn Hotspot" />
+
+            <Button
+                android:id="@+id/btnHotspot"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_margin="10dp"
+                android:paddingVertical="4dp"
+                android:text="Hotspot" />
         </LinearLayout>
 
         <LinearLayout

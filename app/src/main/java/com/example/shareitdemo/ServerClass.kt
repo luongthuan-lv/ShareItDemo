@@ -26,7 +26,7 @@ class ServerClass(var activity: MainActivity) {
     fun startServer(handler: Handler) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                serverSocket = ServerSocket(9090)
+                serverSocket = ServerSocket(9091)
                 while (true) {
                     Log.e("wifidirectdemo1", "HEREEEE11")
                     socket = serverSocket!!.accept()

@@ -18,8 +18,9 @@ import java.net.Socket
 /**
  * Created by Luong Thuan on 21/03/2023.
  */
-class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
-    val hostAdd: String = hostAddress.hostAddress as String
+class ClientClass(hostAddress: InetAddress?, var activity: MainActivity) {
+//    val hostAdd: String = hostAddress?.hostAddress as String
+    val hostAdd: String = "192.168.117.61"
     var clientSocket: Socket? = null
     var sendReceive: SendReceive? = null
 
@@ -28,11 +29,12 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
             withContext(Dispatchers.IO) {
                 try {
                     while (true) {
-                        Log.e("wifidirectdemo1", "startClient")
                         clientSocket = Socket()
+                        Log.e("wifidirectdemo1", "startClient $hostAdd")
                         clientSocket?.bind(null)
-                        clientSocket?.connect(InetSocketAddress(hostAdd, 9090), 10000)
+                        clientSocket?.connect(InetSocketAddress(hostAdd, 9091), 1000)
 
+                        Log.e("wifidirectdemo1", "connectClient $hostAdd")
 
 
                         sendReceive = SendReceive(clientSocket!!, handler)
@@ -43,6 +45,7 @@ class ClientClass(hostAddress: InetAddress, var activity: MainActivity) {
                     }
 
                 } catch (e: IOException) {
+                    Log.e("wifidirectdemo1", "HEREEEE CLIENT $e")
                     e.printStackTrace()
                 }
             }

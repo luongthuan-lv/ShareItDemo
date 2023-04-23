@@ -1,6 +1,7 @@
 package com.example.shareitdemo
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,11 +12,14 @@ import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.net.wifi.p2p.*
 import android.net.wifi.p2p.WifiP2pManager.*
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.text.format.Formatter
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -33,6 +37,7 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
     APManager.OnSuccessListener {
     val TAG = "wifidirectdemo"
     private var manager: WifiP2pManager? = null
+    private var wifiManager: WifiManager? = null
     private var isWifiP2pEnabled = false
     private var retryChannel = false
 
@@ -50,6 +55,8 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
     private var serverAddress: InetAddress? = null
 
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -78,31 +85,52 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
             finish()
         }
 
+        btnConnectHotspot.setOnClickListener {
+
+            wifiManager!!.isWifiEnabled = true // Bật Wi-Fi
+
+            val hotspotName = "AndroidShare_9755"
+            val hotspotPassword = "j4sp478xwa9i32k"
+            val wifiConfig = WifiConfiguration()
+            wifiConfig.SSID = "\"$hotspotName\""
+            wifiConfig.preSharedKey = "\"$hotspotPassword\""
+            val networkId = wifiManager!!.addNetwork(wifiConfig)
+            wifiManager!!.enableNetwork(networkId, true)
+
+        }
+
+        btnHotspot.setOnClickListener {
+            val apManager: APManager = APManager.getApManager(this)
+            apManager.turnOnHotspot(
+                this, this, DefaultFailureListener(this)
+            )
+        }
+
         wifi.setOnClickListener {
-//            val ssid = "DIRECT-hs-My12345678"
-//            val pass = "12345678"
-//            val band = WifiP2pConfig.GROUP_OWNER_BAND_2GHZ
-//
-//            val config: WifiP2pConfig = WifiP2pConfig.Builder()
-//                    .setNetworkName(ssid)
-//                    .setPassphrase(pass)
-//                    .enablePersistentMode(false)
-//                    .setGroupOperatingBand(band)
-//                    .build()
-//
-//
-//            manager?.createGroup(channel!!, config, object : WifiP2pManager.ActionListener {
-//                override fun onSuccess() {
-//                    Toast.makeText(
-//                        this@MainActivity, "Create Wifi", Toast.LENGTH_SHORT
-//                    ).show()
-//                    Log.e(TAG, "Create Group ${WifiP2pGroup().passphrase}")
-//                }
-//
-//                override fun onFailure(p0: Int) {
-//                }
-//
-//            })
+            val ssid = "DIRECT-hs-My12345678"
+            val pass = "12345678"
+            val band = WifiP2pConfig.GROUP_OWNER_BAND_2GHZ
+
+            val config: WifiP2pConfig = WifiP2pConfig.Builder()
+                    .setNetworkName(ssid)
+                    .setPassphrase(pass)
+                    .enablePersistentMode(false)
+                    .setGroupOperatingBand(band)
+                    .build()
+
+
+            manager?.createGroup(channel!!, config, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Toast.makeText(
+                        this@MainActivity, "Create Wifi", Toast.LENGTH_SHORT
+                    ).show()
+                    Log.e(TAG, "Create Group ${WifiP2pGroup().passphrase}")
+                }
+
+                override fun onFailure(p0: Int) {
+                }
+
+            })
 
 
 //            manager?.createGroup(channel!!, object : WifiP2pManager.ActionListener {
@@ -119,35 +147,34 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
 //            })
 
 
-            val apManager: APManager = APManager.getApManager(this)
-            apManager.turnOnHotspot(
-                this, this, DefaultFailureListener(this)
-            )
 
         }
+
+
 
 
 
         stop.setOnClickListener {
 
 
-            manager?.requestGroupInfo(channel!!, object : WifiP2pManager.GroupInfoListener {
-                override fun onGroupInfoAvailable(p0: WifiP2pGroup?) {
-                    Log.e(TAG, "Create Group ${p0?.passphrase} ~~ ${p0?.networkName}")
-                }
-
-            })
-//            manager?.removeGroup(channel, object : WifiP2pManager.ActionListener {
-//                override fun onSuccess() {
-//                    Toast.makeText(
-//                        this@MainActivity, "Stop Wifi", Toast.LENGTH_SHORT
-//                    ).show()
-//                }
-//
-//                override fun onFailure(p0: Int) {
+//            manager?.requestGroupInfo(channel!!, object : WifiP2pManager.GroupInfoListener {
+//                override fun onGroupInfoAvailable(p0: WifiP2pGroup?) {
+//                    Log.e(TAG, "Create Group ${p0?.passphrase} ~~ ${p0?.networkName}")
 //                }
 //
 //            })
+
+            manager?.removeGroup(channel, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Toast.makeText(
+                        this@MainActivity, "Stop Wifi", Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                override fun onFailure(p0: Int) {
+                }
+
+            })
         }
 
         discover.setOnClickListener {
@@ -185,34 +212,34 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
 //            Log.e(TAG, "config: $config")
 
 
-//            val ssid = "DIRECT-hs-My12345678"
-//            val pass = "12345678"
-//            val band = WifiP2pConfig.GROUP_OWNER_BAND_2GHZ
-//
-//            val config: WifiP2pConfig = WifiP2pConfig.Builder()
-//                .setNetworkName(ssid)
-//                .setPassphrase(pass)
-//                .enablePersistentMode(false)
-//               // .setGroupOperatingBand(band)
-//                .build()
+            val ssid = "DIRECT-hs-My12345678"
+            val pass = "12345678"
+            val band = WifiP2pConfig.GROUP_OWNER_BAND_2GHZ
+
+            val config: WifiP2pConfig = WifiP2pConfig.Builder()
+                .setNetworkName(ssid)
+                .setPassphrase(pass)
+                .enablePersistentMode(false)
+                .setGroupOperatingBand(band)
+                .build()
 
 
-//            manager!!.connect(channel, config, object : ActionListener {
-//                override fun onSuccess() {
-//                    // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
-//                    Toast.makeText(
-//                        this@MainActivity, "Connect Success!", Toast.LENGTH_SHORT
-//                    ).show()
-//                }
-//
-//                override fun onFailure(reason: Int) {
-//                    Toast.makeText(
-//                        this@MainActivity, "Connect failed. Retry.", Toast.LENGTH_SHORT
-//                    ).show()
-//                }
-//            })
+            manager!!.connect(channel, config, object : ActionListener {
+                override fun onSuccess() {
+                    // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                    Toast.makeText(
+                        this@MainActivity, "Connect Success!", Toast.LENGTH_SHORT
+                    ).show()
+                }
 
-            connectHotspot()
+                override fun onFailure(reason: Int) {
+                    Toast.makeText(
+                        this@MainActivity, "Connect failed. Retry.", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+
+//            connectHotspot()
         }
 
         btnDisConnect.setOnClickListener {
@@ -302,7 +329,8 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         }
 
         btnClient.setOnClickListener {
-            clientClass = ClientClass(serverAddress!!, this@MainActivity)
+           // clientClass = ClientClass(serverAddress!!, this@MainActivity)
+            clientClass = ClientClass(null, this@MainActivity)
             clientClass?.startClient(handler)
         }
     }
@@ -365,8 +393,8 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         }
 
         // Hardware capability check
-        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-        if (!wifiManager.isP2pSupported) {
+        wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
+        if (!wifiManager!!.isP2pSupported) {
             Log.e(
                 TAG, "Wi-Fi Direct is not supported by the hardware or Wi-Fi is off."
             )
@@ -499,20 +527,20 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         override fun onConnectionInfoAvailable(info: WifiP2pInfo) {
             val groupOwnerAddress: InetAddress = info.groupOwnerAddress
 
-            if (info.groupFormed && info.isGroupOwner) {
-                /*TODO SERVER*/
-                Log.e(TAG, "TODO SERVER")
-                serverClass = ServerClass(this@MainActivity)
-//                serverClass!!.startServerText(handler)
-                serverClass!!.startServer(handler)
-
-            } else if (info.groupFormed) {
-                /*TODO CLIENT*/
-                Log.e(TAG, "TODO CLIENT")
-                clientClass = ClientClass(groupOwnerAddress, this@MainActivity)
-                clientClass?.startClient(handler)
-
-            }
+//            if (info.groupFormed && info.isGroupOwner) {
+//                /*TODO SERVER*/
+//                Log.e(TAG, "TODO SERVER")
+//                serverClass = ServerClass(this@MainActivity)
+////                serverClass!!.startServerText(handler)
+//                serverClass!!.startServer(handler)
+//
+//            } else if (info.groupFormed) {
+//                /*TODO CLIENT*/
+//                Log.e(TAG, "TODO CLIENT ${groupOwnerAddress.hostAddress}")
+//                clientClass = ClientClass(groupOwnerAddress, this@MainActivity)
+//                clientClass?.startClient(handler)
+//
+//            }
 
             btnConnect.visibility = View.GONE
         }
@@ -538,26 +566,10 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
         Log.e(TAG, "HOTSPOT: $ssid ~ $password")
     }
 
-    fun connectHotspot() {
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        if (!wifiManager.isWifiEnabled) {
-            wifiManager.isWifiEnabled = true
-        }
-        val wifiConfig = WifiConfiguration()
-        wifiConfig.SSID = "AndroidShare_4345"
-        wifiConfig.preSharedKey = "f43337e9d5da"
 
-        val networkId = wifiManager.addNetwork(wifiConfig)
-
-        wifiManager.disconnect()
-        wifiManager.enableNetwork(networkId, true)
-        wifiManager.reconnect()
-    }
-
-
-    private val wifiManager: WifiManager by lazy {
-        applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-    }
+//    private val wifiManager: WifiManager by lazy {
+//        applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+//    }
 
     private val wifiReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -565,12 +577,12 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
                 WifiManager.NETWORK_STATE_CHANGED_ACTION -> {
                     val networkInfo =
                         intent.getParcelableExtra<NetworkInfo>(WifiManager.EXTRA_NETWORK_INFO)
-                    val wifiInfo = wifiManager.connectionInfo
+                    val wifiInfo = wifiManager!!.connectionInfo
                     if (networkInfo != null && networkInfo.isConnected && wifiInfo != null) {
                         // Connected to a WiFi network, do something here
-                        Log.d("WiFi Connection", "Connected to ${wifiInfo.ssid}")
+                        Log.d(TAG, "Connected to ${wifiInfo.ssid}")
                         Toast.makeText(this@MainActivity, "Success", Toast.LENGTH_SHORT).show()
-                        val ipAddress = wifiManager.connectionInfo.ipAddress
+                        val ipAddress = wifiManager?.connectionInfo!!.ipAddress
                         val ipAddressString = String.format(
                             "%d.%d.%d.%d",
                             ipAddress and 0xff,
@@ -580,7 +592,12 @@ class MainActivity : AppCompatActivity(), ChannelListener, DeviceActionListener,
                         )
 
                          serverAddress = InetAddress.getByName(ipAddressString)
-                        Log.d("TAG", "Server address: ${serverAddress?.hostAddress}")
+                        Log.d(TAG, "Server address: ${serverAddress?.hostAddress}")
+
+
+                        val dhcp = wifiManager!!.dhcpInfo
+                        val address: String = Formatter.formatIpAddress(dhcp.gateway)
+                        Log.d(TAG, "Server address NEW: $address")
                     } else {
                         // Not connected to a WiFi network, do something here
                         Log.d("WiFi Connection", "Not connected to a WiFi network")
